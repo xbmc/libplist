@@ -103,14 +103,15 @@ union plist_uint_ptr
     uint64_t *u64ptr;
 };
 
+#pragma pack(1)
 #define get_unaligned(ptr)			  \
   ({                                              \
-    struct __attribute__((packed)) {		  \
+    struct {		  \
       typeof(*(ptr)) __v;			  \
     } *__p = (void *) (ptr);			  \
     __p->__v;					  \
   })
-
+#pragma pack(pop)
 
 static void byte_convert(uint8_t * address, size_t size)
 {
@@ -128,8 +129,10 @@ static void byte_convert(uint8_t * address, size_t size)
 #endif
 }
 
-static uint32_t uint24_from_be(union plist_uint_ptr buf)
+static uint32_t uint24_from_be(void* p)
 {
+  union plist_uint_ptr buf;
+  buf.src = p;
     union plist_uint_ptr tmp;
     uint32_t ret = 0;
 
@@ -146,6 +149,11 @@ static uint32_t uint24_from_be(union plist_uint_ptr buf)
 #define be16toh(x) (x)
 #else
 #define be16toh(x) ((((x) & 0xFF00) >> 8) | (((x) & 0x00FF) << 8))
+static uint16_t uint16_toh(void *p)
+{
+  uint16_t x = *(uint16_t*)p;
+  return (((x & 0xFF00) >> 8) | ((x & 0x00FF) << 8));
+}
 #endif
 #endif
 
@@ -157,6 +165,14 @@ static uint32_t uint24_from_be(union plist_uint_ptr buf)
                     | (((x) & 0x00FF0000) >> 8) \
                     | (((x) & 0x0000FF00) << 8) \
                     | (((x) & 0x000000FF) << 24))
+static uint32_t uint32_toh(void* p)
+{
+  uint32_t x = *(uint32_t*)p;
+  return (((x & 0xFF000000) >> 24)
+    | ((x & 0x00FF0000) >> 8)
+    | ((x & 0x0000FF00) << 8)
+    | ((x & 0x000000FF) << 24));
+}
 #endif
 #endif
 
@@ -172,26 +188,29 @@ static uint32_t uint24_from_be(union plist_uint_ptr buf)
                     | (((x) & 0x0000000000FF0000ull) << 24) \
                     | (((x) & 0x000000000000FF00ull) << 40) \
                     | (((x) & 0x00000000000000FFull) << 56)) 
+static uint64_t uint64_toh(void* p)
+{
+  uint64_t x = *(uint64_t*)p;
+  return (((x & 0xFF00000000000000ull) >> 56)
+    | ((x & 0x00FF000000000000ull) >> 40)
+    | ((x & 0x0000FF0000000000ull) >> 24)
+    | ((x & 0x000000FF00000000ull) >> 8)
+    | ((x & 0x00000000FF000000ull) << 8)
+    | ((x & 0x0000000000FF0000ull) << 24)
+    | ((x & 0x000000000000FF00ull) << 40)
+    | ((x & 0x00000000000000FFull) << 56));
+}
 #endif
 #endif
 
 #define UINT_TO_HOST(x, n) \
-	({ \
-		union plist_uint_ptr __up; \
-		__up.src = x; \
-		(n == 8 ? be64toh( get_unaligned(__up.u64ptr) ) : \
-		(n == 4 ? be32toh( get_unaligned(__up.u32ptr) ) : \
-		(n == 3 ? uint24_from_be( __up ) : \
-		(n == 2 ? be16toh( get_unaligned(__up.u16ptr) ) : \
-		*__up.u8ptr )))); \
-	})
+		(n == 8 ? uint64_toh(x) : \
+		(n == 4 ? uint32_toh(x) : \
+		(n == 3 ? uint24_from_be(x) : \
+		(n == 2 ? uint32_toh(x) : \
+		*(uint8_t*)x)))); \
 
-#define be64dec(x) \
-	({ \
-		union plist_uint_ptr __up; \
-		__up.src = x; \
-		be64toh( get_unaligned(__up.u64ptr) ); \
-	})
+#define be64dec(x) uint64_toh(x);
 
 #define get_needed_bytes(x) \
 		( ((uint64_t)x) < (1ULL << 8) ? 1 : \

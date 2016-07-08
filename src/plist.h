@@ -30,7 +30,11 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _MSC_VER
+#include <WinSock2.h> //for timeval
+#else
 #include <sys/time.h>
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable:4996)

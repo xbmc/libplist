@@ -54,3 +54,4 @@ cython/.deps
 cython/.libs
 cython/plist.c
 test-driver
+build/

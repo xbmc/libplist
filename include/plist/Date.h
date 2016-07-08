@@ -24,7 +24,11 @@
 
 #include <plist/Node.h>
 #include <ctime>
+#ifdef _MSC_VER
+#include <WinSock2.h>
+#else
 #include <sys/time.h>
+#endif
 
 namespace PList
 {
