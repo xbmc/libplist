@@ -8,8 +8,10 @@ if(MSVC)
   set(CMAKE_DEBUG_POSTFIX "d")
 endif()
 
-find_package(libxml2 REQUIRED NO_MODULE)
-find_package(iconv REQUIRED NO_MODULE)
+if(!UNIFIED_BUILD)
+  find_package(libxml2 REQUIRED NO_MODULE)
+  find_package(iconv REQUIRED NO_MODULE)
+endif()
 
 add_library(libcnary STATIC 
   libcnary/include/iterator.h
