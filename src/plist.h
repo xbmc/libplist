@@ -41,13 +41,17 @@
 #pragma warning(disable:4244)
 #endif
 
-#ifdef WIN32
-  #define PLIST_API __declspec( dllexport )
-#else
-  #ifdef HAVE_FVISIBILITY
-    #define PLIST_API __attribute__((visibility("default")))
+#if PLIST_STATICLIB
+  #define PLIST_API
+#elif
+  #ifdef WIN32
+    #define PLIST_API __declspec( dllexport )
   #else
-    #define PLIST_API
+    #ifdef HAVE_FVISIBILITY
+      #define PLIST_API __attribute__((visibility("default")))
+    #else
+      #define PLIST_API
+    #endif
   #endif
 #endif
 
